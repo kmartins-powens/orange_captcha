@@ -66,9 +66,9 @@ if __name__ == "__main__":
             v2.ColorJitter(brightness=0.5, hue=0.3),
             v2.RandomAdjustSharpness(sharpness_factor=2),
             v2.RandomHorizontalFlip(),
-            v2.RandomRotation([1, 20]),
-            v2.RandomPerspective(),
-            #v2.Grayscale(),
+            # v2.RandomRotation([1, 20]),
+            # v2.RandomPerspective(),
+            # v2.Grayscale(),
             ToTensor(),
         ]
     )
