@@ -136,6 +136,7 @@ if __name__ == "__main__":
         "GroundTruth: ", " ".join(f"{dataset.classes[labels[j]]:10s}" for j in range(4))
     )
     net = Net()
+    net.eval()
     net.load_state_dict(torch.load(model_path, weights_only=True))
     outputs = net(images)
     _, predicted = torch.max(outputs, 1)
