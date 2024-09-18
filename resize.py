@@ -4,7 +4,7 @@ import uuid
 
 seen = set()
 
-directories = ['unsorted/truck',]
+directories = ['Mature',]
 for directory in directories:
 	for filename in os.listdir(directory):
 		im = Image.open(directory + '/' + filename)
@@ -13,4 +13,4 @@ for directory in directories:
 			continue
 		else:
 			seen.add(_id)
-		im.resize((75, 75)).convert("RGB").save(f"data/tracteur/{_id}.jpg", "JPEG")
+		im.resize((75, 75)).convert("RGB").save(f"data/tomate/{_id}.jpg", "JPEG")
