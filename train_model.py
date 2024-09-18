@@ -66,14 +66,12 @@ if __name__ == "__main__":
             v2.ColorJitter(brightness=0.5, hue=0.3),
             v2.RandomAdjustSharpness(sharpness_factor=2),
             v2.RandomHorizontalFlip(),
-            # v2.RandomRotation([1, 20]),
-            # v2.RandomPerspective(),
-            # v2.Grayscale(),
+            v2.RandomRotation([1, 20]),
+            v2.RandomPerspective(),
             ToTensor(),
         ]
     )
     dataset = torchvision.datasets.ImageFolder(root="./data", transform=transform)
-
     # SPLIT DATASET
     splits = [0.8, 0.1, 0.1]
     split_sizes = []
@@ -88,42 +86,66 @@ if __name__ == "__main__":
         "test": DataLoader(test_set, batch_size=32, shuffle=False),
         "val": DataLoader(val_set, batch_size=32, shuffle=False),
     }
-    model_path = "/home/kevin/dev/woob/modules/orange/pages/image_classifier.pth"
+
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(device)
+    model_path = "image_classifier.pth"
     if options.t:
         # DEFINE MODEL
         net = Net()
+        net.to(device)
+        net.cuda()
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.1, verbose=True)
 
-        limit = 3
+        best_val_loss = float('inf')
+        patience = 10
+        epochs_no_improve = 0
         # TRAIN MODEL
         for epoch in range(300):  # loop over the dataset multiple times
             running_loss = 0.0
+            net.train()
             for i, data in enumerate(dataloaders["train"], 0):
                 # get the inputs; data is a list of [inputs, labels]
-                inputs, labels = data
+                inputs, labels = data[0].to(device), data[1].to(device)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
-
-                # forward + backward + optimize
                 outputs = net(inputs)
                 loss = criterion(outputs, labels)
-
                 loss.backward()
                 optimizer.step()
-
-                # print statistics
                 running_loss += loss.item()
-                if running_loss / 50 <= 0.001:
-                    limit -= 1
-                    if limit <= 0:
-                        break
                 if i % 10 == 0:
                     print(f"[{epoch + 1}, {i + 1:2d}] loss: {running_loss / 50:.3f}")
                 running_loss = 0.0
-            if limit <= 0:
+
+            # Évaluation sur le jeu de validation
+            net.eval()  # Mettre le modèle en mode évaluation
+            val_loss = 0.0
+            with torch.no_grad():
+                for data in dataloaders["val"]:
+                    inputs, labels = data
+                    outputs = net(inputs)
+                    loss = criterion(outputs, labels)
+                    val_loss += loss.item()
+
+            val_loss /= len(dataloaders["val"])  # Moyenne de la perte de validation
+            print(f"Epoch {epoch+1} Validation Loss: {val_loss:.3f}")
+
+            # Check for early stopping
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                epochs_no_improve = 0
+            else:
+                epochs_no_improve += 1
+
+            if epochs_no_improve >= patience:
+                print("Early stopping triggered")
                 break
+            # Appeler le scheduler avec la perte de validation
+            scheduler.step(val_loss)
 
         print("Finished Training")
         torch.save(net.state_dict(), model_path)
