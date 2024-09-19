@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import argparse
+from matplotlib import pyplot as plt
 
 args = argparse.ArgumentParser()
 args.add_argument("-t", action="store_true", help="Train the model")
@@ -66,8 +67,8 @@ if __name__ == "__main__":
             v2.ColorJitter(brightness=0.5, hue=0.3),
             v2.RandomAdjustSharpness(sharpness_factor=2),
             v2.RandomHorizontalFlip(),
-            v2.RandomRotation([1, 20]),
-            v2.RandomPerspective(),
+            # v2.RandomRotation([1, 20]),
+            # v2.RandomPerspective(),
             ToTensor(),
         ]
     )
@@ -89,6 +90,8 @@ if __name__ == "__main__":
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model_path = "image_classifier.pth"
+    training_loss = []
+    validation_loss = []
     if options.t:
         # DEFINE MODEL
         net = Net()
@@ -120,6 +123,7 @@ if __name__ == "__main__":
                     print(f"[{epoch + 1}, {i + 1:2d}] loss: {running_loss / 50:.3f}")
                 running_loss = 0.0
 
+            training_loss.append(loss.item()/50)
             # Évaluation sur le jeu de validation
             net.eval()  # Mettre le modèle en mode évaluation
             val_loss = 0.0
@@ -132,7 +136,7 @@ if __name__ == "__main__":
 
             val_loss /= len(dataloaders["val"])  # Moyenne de la perte de validation
             print(f"Epoch {epoch} Validation Loss: {val_loss/50:.3f}")
-
+            validation_loss.append(val_loss/50)
             # Check for early stopping
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -148,6 +152,16 @@ if __name__ == "__main__":
 
         print(f"Finished Training.")
         torch.save(net.state_dict(), model_path)
+
+    # plot model perfomance
+    fig, axs = plt.subplots(2)
+    fig.suptitle('training loss against validation loss')
+    x = 0
+    for y1, y2 in zip(training_loss, validation_loss):
+        axs[0].plot(x, y1)
+        axs[1].plot(x, y2)
+        x += 1
+    plt.show()
 
     dataiter = iter(dataloaders["test"])
     images, labels = next(dataiter)
