@@ -88,7 +88,6 @@ if __name__ == "__main__":
     }
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    print(device)
     model_path = "image_classifier.pth"
     if options.t:
         # DEFINE MODEL
@@ -126,13 +125,13 @@ if __name__ == "__main__":
             val_loss = 0.0
             with torch.no_grad():
                 for data in dataloaders["val"]:
-                    inputs, labels = data
+                    inputs, labels = data[0].to(device), data[1].to(device)
                     outputs = net(inputs)
                     loss = criterion(outputs, labels)
                     val_loss += loss.item()
 
             val_loss /= len(dataloaders["val"])  # Moyenne de la perte de validation
-            print(f"Epoch {epoch+1} Validation Loss: {val_loss:.3f}")
+            print(f"Epoch {epoch} Validation Loss: {val_loss/50:.3f}")
 
             # Check for early stopping
             if val_loss < best_val_loss:
@@ -147,7 +146,7 @@ if __name__ == "__main__":
             # Appeler le scheduler avec la perte de validation
             scheduler.step(val_loss)
 
-        print("Finished Training")
+        print(f"Finished Training.")
         torch.save(net.state_dict(), model_path)
 
     dataiter = iter(dataloaders["test"])
