@@ -30,7 +30,7 @@ class ButtonClickProcessor(object):
         plt.close()
 
 net = Net()
-net.load_state_dict(torch.load('/home/kevin/dev/woob/modules/orange/pages/image_classifier.pth', weights_only=True))
+net.load_state_dict(torch.load('/home/kevin/dev/woob/modules/orange/pages/image_classifier_1.pth', weights_only=True, map_location=torch.device('cpu')))
 net.eval()
 transform = transforms.Compose([transforms.PILToTensor()])
 

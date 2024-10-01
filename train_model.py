@@ -41,7 +41,7 @@ classes = [
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv1 = nn.Conv2d(1, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(3600, 64)
@@ -67,8 +67,9 @@ if __name__ == "__main__":
             v2.ColorJitter(brightness=0.5, hue=0.3),
             v2.RandomAdjustSharpness(sharpness_factor=2),
             v2.RandomHorizontalFlip(),
-            # v2.RandomRotation([1, 20]),
-            # v2.RandomPerspective(),
+            v2.RandomRotation([0, 5]),
+            v2.Grayscale(),
+            v2.RandomPerspective(),
             ToTensor(),
         ]
     )
@@ -172,7 +173,7 @@ if __name__ == "__main__":
     )
     net = Net()
     net.eval()
-    net.load_state_dict(torch.load(model_path, weights_only=True))
+    net.load_state_dict(torch.load(model_path, weights_only=True, map_location=torch.device('cpu')))
     outputs = net(images)
     _, predicted = torch.max(outputs, 1)
     print(
